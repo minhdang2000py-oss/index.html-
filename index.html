@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Góc Làm Việc – Danh sách sản phẩm</title>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --surface: #ffffff;
+      --ink: #1b2433;
+      --muted: #5b6678;
+      --accent: #2f5bff;
+      --line: #d5dbe5;
+      --error-bg: #fdecec;
+      --error-ink: #9b1c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    header {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px 16px;
+    }
+    h1 { margin: 0 0 6px; font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -0.02em; }
+    header p { margin: 0; color: var(--muted); }
+
+    .search-wrap { max-width: 1100px; margin: 0 auto; padding: 8px 20px 20px; }
+    .search-wrap label { display: block; font-weight: 600; margin-bottom: 6px; }
+    #search {
+      width: 100%;
+      max-width: 480px;
+      padding: 12px 14px;
+      font-size: 1rem;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+    }
+    #search:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+    #count { margin-top: 8px; color: var(--muted); font-size: 0.95rem; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 0 20px 48px; }
+    #list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .product {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .thumb {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      background: var(--tint, #dfe6f5);
+    }
+    .info { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .info h2 { margin: 0; font-size: 1.1rem; }
+    .info .desc { margin: 0; color: var(--muted); font-size: 0.92rem; flex: 1; }
+    .price { margin-top: 8px; font-weight: 700; color: var(--accent); font-size: 1.05rem; }
+
+    .error {
+      background: var(--error-bg);
+      color: var(--error-ink);
+      border: 1px solid #f2b8b8;
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-weight: 500;
+    }
+    footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 0 20px 32px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Góc Làm Việc</h1>
+    <p>Đồ dùng cho bàn học và bàn làm việc của bạn.</p>
+  </header>
+
+  <div class="search-wrap">
+    <label for="search">Tìm sản phẩm theo tên</label>
+    <input id="search" type="search" placeholder="Ví dụ: bàn phím, đèn..." autocomplete="off" maxlength="60">
+    <div id="count" aria-live="polite"></div>
+  </div>
+
+  <main>
+    <section id="list" aria-label="Danh sách sản phẩm"></section>
+    <div id="message" role="alert"></div>
+  </main>
+
+  <footer>Bài tập 35 – Danh sách sản phẩm</footer>
+
+  <script>
+    // 1. Dữ liệu: mảng sản phẩm (8 sản phẩm)
+    const products = [
+      { id: 1, name: "Bàn phím cơ", price: 1290000, desc: "Switch đỏ, đèn nền trắng, gõ êm.", icon: "⌨️", tint: "#dfe6f5" },
+      { id: 2, name: "Chuột không dây", price: 390000, desc: "Kết nối Bluetooth, pin dùng 6 tháng.", icon: "🖱️", tint: "#e3f1e6" },
+      { id: 3, name: "Đèn bàn LED", price: 450000, desc: "3 mức sáng, chống chói mắt.", icon: "💡", tint: "#fbf0d4" },
+      { id: 4, name: "Tai nghe chụp tai", price: 890000, desc: "Chống ồn, đệm tai mềm.", icon: "🎧", tint: "#ecdff3" },
+      { id: 5, name: "Sổ tay A5", price: 65000, desc: "Giấy kem 100gsm, 200 trang.", icon: "📓", tint: "#f6e0d8" },
+      { id: 6, name: "Giá đỡ laptop", price: 320000, desc: "Nhôm gấp gọn, nâng cao 6 góc.", icon: "💻", tint: "#dcebf2" },
+      { id: 7, name: "Bình giữ nhiệt", price: 210000, desc: "500ml, giữ nóng 8 giờ.", icon: "🥤", tint: "#e0efe9" },
+      { id: 8, name: "Ổ cắm điện thông minh", price: 275000, desc: "4 cổng USB, điều khiển qua ứng dụng.", icon: "🔌", tint: "#e9e9ee" }
+    ];
+
+    const listEl = document.getElementById("list");
+    const messageEl = document.getElementById("message");
+    const countEl = document.getElementById("count");
+    const searchEl = document.getElementById("search");
+
+    // 2. Chuẩn hoá chuỗi: bỏ khoảng trắng thừa, về chữ thường, bỏ dấu tiếng Việt
+    function normalize(text) {
+      return text
+        .normalize("NFD")                 // tách dấu khỏi chữ
+        .replace(/[\u0300-\u036f]/g, "")  // xoá dấu
+        .replace(/đ/g, "d").replace(/Đ/g, "D")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+    }
+
+    // Tính sẵn chuỗi tìm kiếm một lần, không tính lại mỗi lần gõ
+    const index = products.map(p => ({ product: p, key: normalize(p.name) }));
+
+    const formatPrice = n => n.toLocaleString("vi-VN") + " ₫";
+
+    // 3. Vẽ danh sách bằng createElement + textContent (không dùng innerHTML)
+    function render(items) {
+      listEl.replaceChildren();
+      messageEl.replaceChildren();
+
+      items.forEach(p => {
+        const card = document.createElement("article");
+        card.className = "product";
+
+        const thumb = document.createElement("div");
+        thumb.className = "thumb";
+        thumb.style.setProperty("--tint", p.tint);
+        thumb.textContent = p.icon;
+        thumb.setAttribute("aria-hidden", "true");
+
+        const info = document.createElement("div");
+        info.className = "info";
+
+        const name = document.createElement("h2");
+        name.textContent = p.name;
+        const desc = document.createElement("p");
+        desc.className = "desc";
+        desc.textContent = p.desc;
+        const price = document.createElement("div");
+        price.className = "price";
+        price.textContent = formatPrice(p.price);
+
+        info.append(name, desc, price);
+        card.append(thumb, info);
+        listEl.append(card);
+      });
+    }
+
+    function showError(rawQuery) {
+      const box = document.createElement("div");
+      box.className = "error";
+      // textContent: nếu người dùng gõ <script>, nó chỉ hiện như chữ thường
+      box.textContent = "Không tìm thấy sản phẩm nào cho “" + rawQuery + "”. Hãy thử từ khoá khác.";
+      messageEl.replaceChildren(box);
+    }
+
+    // 4. Tìm kiếm
+    function search() {
+      const rawQuery = searchEl.value.trim().slice(0, 60); // giới hạn độ dài
+      const query = normalize(rawQuery);
+
+      const results = query === ""
+        ? products
+        : index.filter(item => item.key.includes(query)).map(item => item.product);
+
+      render(results);
+      if (results.length === 0) showError(rawQuery);
+      countEl.textContent = query === ""
+        ? "Hiển thị tất cả " + products.length + " sản phẩm."
+        : "Tìm thấy " + results.length + " sản phẩm.";
+    }
+
+    // Debounce: chỉ tìm khi người dùng ngừng gõ 150ms
+    let timer;
+    searchEl.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(search, 150);
+    });
+
+    search();
+  </script>
+</body>
+</html>
